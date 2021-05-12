@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from _curses import window  # type: ignore
 
 from tg import config
-from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow
+from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
@@ -124,7 +124,7 @@ class StatusView:
         self.win.addstr(0, 0, msg.replace("\n", " ")[: self.w])
         self._refresh()
 
-    def get_input(self, prefix: str = "") -> Optional[str]:
+    def get_input(self, prefix: str = ":") -> Optional[str]:
         curses.curs_set(1)
         buff = ""
 
@@ -145,6 +145,13 @@ class StatusView:
                         buff = buff[:-1]
                 elif key in (7, 27):  # (^G, <esc>) cancel
                     return None
+                elif key == 23: # ^W - delete previous word
+                    if buff:
+                        last_space = buff.rfind(' ')
+                        if last_space > 0:
+                            buff = buff[:last_space]
+                        else:
+                            buff = ''
                 elif chr(key).isprintable():
                     buff += chr(key)
         finally:
@@ -185,12 +192,20 @@ class ChatView:
     def _chat_attributes(
         self, is_selected: bool, title: str, user: Optional[str]
     ) -> Tuple[int, ...]:
-        attrs = (
-            get_color(cyan, -1),
-            get_color(get_color_by_str(title), -1),
-            get_color(get_color_by_str(user or ""), -1),
-            self._msg_color(is_selected),
-        )
+        if user:
+            attrs = (
+                get_color(cyan, -1),
+                get_color(blue, -1),
+                get_color(green, -1),
+                self._msg_color(is_selected),
+            )
+        else:
+            attrs = (
+                get_color(cyan, -1),
+                get_color(green, -1),
+                get_color(green, -1),
+                self._msg_color(is_selected),
+            )
         if is_selected:
             return tuple(attr | reverse for attr in attrs)
         return attrs
@@ -229,7 +244,8 @@ class ChatView:
 
             for attr, elem in zip(
                 self._chat_attributes(is_selected, title, last_msg_sender),
-                [f"{date} ", title, sender_label, f" {last_msg}"],
+                [f"{date} ", title],
+                # [f"{date} ", title, sender_label, f" {last_msg}"],
             ):
                 if not elem:
                     continue
@@ -453,7 +469,12 @@ class MsgView:
             for msg_idx, msg_item in msgs[ignore_before:]:
                 is_selected_msg = current_msg_idx == msg_idx
                 msg_proxy = MsgProxy(msg_item)
-                dt = msg_proxy.date.strftime("%H:%M:%S")
+                date_ = msg_proxy.date
+                dt = date_.strftime("%d%b%y %H:%M")
+                if datetime.today().date() == date_.date():
+                    dt = date_.strftime("%H:%M")
+                elif date_.date().year == datetime.today().year:
+                    dt = date_.strftime("%d%b %H:%M")
                 user_id_item = msg_proxy.sender_id
 
                 user_id = self.model.users.get_user_label(user_id_item)
@@ -620,11 +641,11 @@ def get_date(chat: Dict[str, Any]) -> str:
     if not last_msg:
         return "<No date>"
     dt = datetime.fromtimestamp(last_msg["date"])
-    date_fmt = "%d %b %y"
+    date_fmt = "%b%y"
     if datetime.today().date() == dt.date():
         date_fmt = "%H:%M"
     elif datetime.today().year == dt.year:
-        date_fmt = "%d %b"
+        date_fmt = "%d%b"
     return dt.strftime(date_fmt)
 
 

@@ -279,8 +279,12 @@ class Controller:
         chat_id = self.model.current_chat_id
         if chat_id is None:
             return
+        ch__ = self.model.chats.chats[self.model.current_chat]
         reply_to_msg = self.model.current_msg_id
-        if msg := self.view.status.get_input():
+        # fff = open('/home/max/fff.fff', 'w')
+        # fff.write(f'{str(self.model.current_msg)}')
+        # fff.close()
+        if msg := self.view.status.get_input(prefix=f'rpl {ch__["title"]}: '):
             self.model.view_all_msgs()
             self.tg.reply_message(chat_id, reply_to_msg, msg)
             self.present_info("Message reply sent")
@@ -317,8 +321,9 @@ class Controller:
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
             return
-        self.tg.send_chat_action(chat_id, ChatAction.chatActionTyping)
-        if msg := self.view.status.get_input():
+        # self.tg.send_chat_action(chat_id, ChatAction.chatActionTyping)
+        ch__ = self.model.chats.chats[self.model.current_chat]
+        if msg := self.view.status.get_input(prefix=f'msg {ch__["title"]}: '):
             self.model.send_message(text=msg)
             self.present_info("Message sent")
         else:
@@ -331,10 +336,11 @@ class Controller:
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
             return
-        with NamedTemporaryFile("r+", suffix=".txt") as f, suspend(
+        ch__ = self.model.chats.chats[self.model.current_chat]
+        with NamedTemporaryFile("r+", suffix=f"_{ch__['title']}.txt") as f, suspend(
             self.view
         ) as s:
-            self.tg.send_chat_action(chat_id, ChatAction.chatActionTyping)
+            # self.tg.send_chat_action(chat_id, ChatAction.chatActionTyping)
             s.call(config.LONG_MSG_CMD.format(file_path=shlex.quote(f.name)))
             with open(f.name) as f:
                 if msg := f.read().strip():
@@ -490,16 +496,21 @@ class Controller:
 
     def _open_msg(self, msg: MsgProxy, cmd: str = None) -> None:
         if msg.is_text:
-            with NamedTemporaryFile("w", suffix=".txt") as f:
-                f.write(msg.text_content)
-                f.flush()
-                with suspend(self.view) as s:
-                    s.open_file(f.name, cmd)
             return
+            # with NamedTemporaryFile("w", suffix=".txt") as f:
+            #     f.write(msg.text_content)
+            #     f.flush()
+            #     with suspend(self.view) as s:
+            #         s.open_file(f.name, cmd)
+            # return
 
         path = msg.local_path
         if not path:
-            self.present_info("File should be downloaded first")
+            self.download_current_file()
+            # self.present_info("File should be downloaded first")
+            self.tg.open_message_content(chat_id, msg.msg_id)
+            with suspend(self.view) as s:
+                s.open_file(path, cmd)
             return
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not chat_id:
@@ -679,6 +690,15 @@ class Controller:
 
     @bind(chat_handler, ["l", "^J", "^E"])
     def handle_msgs(self) -> Optional[str]:
+        rc = self.handle(msg_handler, 0.2)
+        if rc == "QUIT":
+            return rc
+        self.chat_size = 0.5
+        self.resize()
+
+    @bind(chat_handler, ["i"])
+    def handle_msgs_2(self) -> Optional[str]:
+        self.write_short_msg()
         rc = self.handle(msg_handler, 0.2)
         if rc == "QUIT":
             return rc
