@@ -7,6 +7,8 @@ from queue import Queue
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional
 
+from subprocess import run as runproc, check_output as procoutput
+
 from telegram.utils import AsyncResult
 
 from tg import config
@@ -66,6 +68,8 @@ def bind(
     return decorator
 
 
+
+
 class Controller:
     def __init__(self, model: Model, view: View, tg: Tdlib) -> None:
         self.model = model
@@ -74,6 +78,8 @@ class Controller:
         self.is_running = True
         self.tg = tg
         self.chat_size = 0.5
+        self.layout = 'English'
+        # self.i3wm = Connection()
 
     @bind(msg_handler, ["c"])
     def show_chat_info(self) -> None:
@@ -281,15 +287,13 @@ class Controller:
             return
         ch__ = self.model.chats.chats[self.model.current_chat]
         reply_to_msg = self.model.current_msg_id
-        # fff = open('/home/max/fff.fff', 'w')
-        # fff.write(f'{str(self.model.current_msg)}')
-        # fff.close()
         if msg := self.view.status.get_input(prefix=f'rpl {ch__["title"]}: '):
             self.model.view_all_msgs()
             self.tg.reply_message(chat_id, reply_to_msg, msg)
             self.present_info("Message reply sent")
         else:
             self.present_info("Message reply wasn't sent")
+        # self.i3wm.send_tick('english')
 
     @bind(msg_handler, ["R"])
     def reply_with_long_message(self) -> None:
@@ -317,6 +321,8 @@ class Controller:
 
     @bind(msg_handler, ["a", "i"])
     def write_short_msg(self) -> None:
+        if 'Russian' in self.layout:
+            runproc(['swaymsg', 'input * xkb_switch_layout 1'])
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
@@ -330,6 +336,9 @@ class Controller:
         else:
             self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
             self.present_info("Message wasn't sent")
+        # self.i3wm.send_tick('english')
+        self.layout = procoutput("""swaymsg -r -t get_inputs | jq '[ .[] | select(.type == "keyboard") ] | .[1] | .xkb_active_layout_name'""", shell=True).decode().strip()
+        runproc(['swaymsg', 'input * xkb_switch_layout 0'])
 
     @bind(msg_handler, ["A", "I"])
     def write_long_msg(self) -> None:
@@ -497,14 +506,8 @@ class Controller:
         return chat["permissions"]["can_send_messages"]
 
     def _open_msg(self, msg: MsgProxy, cmd: str = None) -> None:
-        if msg.is_text:
+        if msg.is_text: # do nothing
             return
-            # with NamedTemporaryFile("w", suffix=".txt") as f:
-            #     f.write(msg.text_content)
-            #     f.flush()
-            #     with suspend(self.view) as s:
-            #         s.open_file(f.name, cmd)
-            # return
 
         path = msg.local_path
         if not path:

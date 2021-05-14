@@ -656,6 +656,8 @@ def get_date(chat: Dict[str, Any]) -> str:
     date_fmt = "%b%y"
     if datetime.today().date() == dt.date():
         date_fmt = "%H:%M"
+    # elif dt.date() == datetime.date.today() - datetime.timedelta(days=1):
+    #     return 'Yestd'
     elif datetime.today().year == dt.year:
         date_fmt = "%d%b"
     return dt.strftime(date_fmt)
