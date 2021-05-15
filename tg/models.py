@@ -81,7 +81,7 @@ class Model:
         res = False
         if chat_id := self.chats.id_by_index(self.current_chat):
             res = self.msgs.jump_bottom(chat_id)
-        self.view_current_msg()
+        # self.view_current_msg()
         return res
 
     def set_current_chat_by_id(self, chat_id: int) -> bool:
@@ -136,7 +136,7 @@ class Model:
         if not chat_id:
             return False
         is_next = self.msgs.next_msg(chat_id, step)
-        self.view_current_msg()
+        # self.view_current_msg()
         return is_next
 
     def prev_msg(self, step: int = 1) -> bool:
@@ -144,8 +144,8 @@ class Model:
         if not chat_id:
             return False
         is_prev = self.msgs.prev_msg(chat_id, step)
-        if is_prev:
-            self.view_current_msg()
+        # if is_prev:
+        #     self.view_current_msg()
         return is_prev
 
     def get_chats(
@@ -746,6 +746,12 @@ class UserModel:
             UserStatus.userStatusLastMonth: 3,
         }
         return order.get(status, sys.maxsize)
+
+    def is_bot(self, user_id: int) -> bool:
+        user = self.get_user(user_id)
+        if user and user["type"]["@type"] == "userTypeBot":
+            return True
+        return False
 
     def is_online(self, user_id: int) -> bool:
         user = self.get_user(user_id)

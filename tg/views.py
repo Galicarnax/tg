@@ -6,11 +6,15 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from _curses import window  # type: ignore
 
 from tg import config
-from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red
+from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red, black
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
 from tg.utils import get_color_by_str, num, string_len_dwc, truncate_to_len
+
+from re import compile
+
+re_digit = compile("""^[1-9]\d*$""")
 
 log = logging.getLogger(__name__)
 
@@ -202,24 +206,45 @@ class ChatView:
         return color
 
     def _chat_attributes(
-        self, is_selected: bool, title: str, user: Optional[str]
+            self, is_selected: bool, title: str, status: str, unseen: bool
     ) -> Tuple[int, ...]:
-        if user:
+        bgc = -1
+        if is_selected:
+            bgc = black
+        if status == 'online':
             attrs = (
-                get_color(cyan, -1),
-                get_color(blue, -1),
-                get_color(green, -1),
+                get_color(red, bgc),
+                get_color(cyan, bgc),
+                get_color(green, bgc),
+                get_color(yellow, bgc) | bold,
+                self._msg_color(is_selected),
+            )
+        elif status == 'offline':
+            attrs = (
+                get_color(red, bgc),
+                get_color(cyan, bgc),
+                get_color(red, bgc),
+                get_color(yellow, bgc),
+                self._msg_color(is_selected),
+            )
+        elif status == 'group':
+            attrs = (
+                get_color(red, bgc),
+                get_color(cyan, bgc),
+                get_color(blue, bgc),
+                get_color(yellow, bgc),
                 self._msg_color(is_selected),
             )
         else:
             attrs = (
-                get_color(cyan, -1),
-                get_color(green, -1),
-                get_color(green, -1),
+                get_color(red, bgc),
+                get_color(cyan, bgc),
+                get_color(magenta, bgc),
+                get_color(yellow, bgc),
                 self._msg_color(is_selected),
             )
         if is_selected:
-            return tuple(attr | reverse for attr in attrs)
+            return tuple(attr | bold for attr in attrs)
         return attrs
 
     def draw(
@@ -243,26 +268,46 @@ class ChatView:
             last_msg_sender, last_msg = self._get_last_msg_data(chat)
             sender_label = f" {last_msg_sender}" if last_msg_sender else ""
             flags = self._get_flags(chat)
-            flags_len = string_len_dwc(flags)
+            unread_count = ''
+            for x in flags:
+                if re_digit.match(x):
+                    unread_count = f' [{x}]';
+            if not unread_count and 'unseen' in flags:
+                unread_count = ' ✘'
+            # flags_len = string_len_dwc(flags)
 
-            if flags:
-                self.win.addstr(
-                    i,
-                    max(0, width - flags_len),
-                    truncate_to_len(flags, width)[-width:],
-                    # flags[-width:],
-                    self._unread_color(is_selected),
-                )
+            # if flags:
+            #     self.win.addstr(
+            #         i,
+            #         max(0, width - flags_len),
+            #         truncate_to_len(flags, width)[-width:],
+            #         # flags[-width:],
+            #         self._unread_color(is_selected),
+            #     )
+
+            status = 'offline'
+            if 'online' in flags:
+                status = 'online'
+            elif sender_label:
+                status = 'group'
+
+            if 'bot' in flags:
+                status = 'bot'
+
+            cursor = '  '
+            if is_selected:
+                cursor = '> '
 
             for attr, elem in zip(
-                self._chat_attributes(is_selected, title, last_msg_sender),
-                [f"{date} ", title],
+                self._chat_attributes(is_selected, title, status, 'unseen' in flags),
+                [cursor, f"{date} ", title, unread_count],
                 # [f"{date} ", title, sender_label, f" {last_msg}"],
             ):
                 if not elem:
                     continue
                 item = truncate_to_len(
-                    elem, max(0, width - offset - flags_len)
+                    elem, max(0, width - offset)
+                    # elem, max(0, width - offset - flags_len)
                 )
 
                 if len(item) > 1:
@@ -284,7 +329,7 @@ class ChatView:
 
         return None, last_msg
 
-    def _get_flags(self, chat: Dict[str, Any]) -> str:
+    def _get_flags(self, chat: Dict[str, Any]) -> List[str]:
         flags = []
 
         msg = chat.get("last_message")
@@ -306,6 +351,9 @@ class ChatView:
         if action_label := _get_action_label(self.model.users, chat):
             flags.append(action_label)
 
+        if self.model.users.is_bot(chat["id"]):
+            flags.append("bot")
+
         if self.model.users.is_online(chat["id"]):
             flags.append("online")
 
@@ -323,10 +371,11 @@ class ChatView:
         if get_chat_type(chat) == ChatType.chatTypeSecret:
             flags.append("secret")
 
-        label = " ".join(config.CHAT_FLAGS.get(flag, flag) for flag in flags)
-        if label:
-            return f" {label}"
-        return label
+        return flags
+        # label = " ".join(config.CHAT_FLAGS.get(flag, flag) for flag in flags)
+        # if label:
+        #     return f" {label}"
+        # return label
 
 
 class MsgView:
