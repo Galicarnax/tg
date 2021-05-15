@@ -577,8 +577,9 @@ class Controller:
         if not chat_id:
             return
         self.tg.open_message_content(chat_id, msg.msg_id)
-        with suspend(self.view) as s:
-            s.open_file(path, cmd)
+        # with suspend(self.view) as s:
+            # s.open_file(path, cmd)
+        runproc(['xdg-open', path])
 
     @bind(msg_handler, ["!"])
     def open_msg_with_cmd(self) -> None:
