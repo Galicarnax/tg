@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from _curses import window  # type: ignore
 
 from tg import config
-from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red, black
+from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
@@ -206,49 +206,36 @@ class ChatView:
         return color
 
     def _chat_attributes(
-            self, is_selected: bool, title: str, status: str, unseen: bool
+            self, is_selected: bool, title: str, status: str, muted: bool
     ) -> Tuple[int, ...]:
         bgc = -1
         if is_selected:
-            bgc = black
+            bgc = 234
+
+        title_color = red
+
         if status == 'online':
-            attrs = (
-                get_color(red, bgc),
-                get_color(cyan, bgc),
-                get_color(green, bgc),
-                get_color(yellow, bgc) | bold,
-                self._msg_color(is_selected),
-            )
-        elif status == 'offline':
-            attrs = (
-                get_color(red, bgc),
-                get_color(cyan, bgc),
-                get_color(red, bgc),
-                get_color(yellow, bgc),
-                self._msg_color(is_selected),
-            )
+            title_color = green
         elif status == 'group':
-            attrs = (
-                get_color(red, bgc),
-                get_color(cyan, bgc),
-                get_color(blue, bgc),
-                get_color(yellow, bgc),
-                self._msg_color(is_selected),
-            )
-        else:
-            attrs = (
-                get_color(red, bgc),
-                get_color(cyan, bgc),
-                get_color(magenta, bgc),
-                get_color(yellow, bgc),
-                self._msg_color(is_selected),
-            )
+            title_color = blue
+        elif status == 'bot':
+            title_color = 108
+
+        attrs = (
+            get_color(yellow, bgc),
+            get_color(101, bgc),
+            get_color(title_color, bgc),
+            get_color(yellow if not muted else 238, bgc) | bold,
+            self._msg_color(is_selected),
+        )
+
         if is_selected:
             return tuple(attr | bold for attr in attrs)
+
         return attrs
 
     def draw(
-        self, current: int, chats: List[Dict[str, Any]], title: str = "Chats"
+    self, current: int, chats: List[Dict[str, Any]], title: str = "Chats"
     ) -> None:
         self.win.erase()
         line = curses.ACS_VLINE  # type: ignore
@@ -274,16 +261,9 @@ class ChatView:
                     unread_count = f' [{x}]';
             if not unread_count and 'unseen' in flags:
                 unread_count = ' ✘'
-            # flags_len = string_len_dwc(flags)
 
-            # if flags:
-            #     self.win.addstr(
-            #         i,
-            #         max(0, width - flags_len),
-            #         truncate_to_len(flags, width)[-width:],
-            #         # flags[-width:],
-            #         self._unread_color(is_selected),
-            #     )
+            if not unread_count and 'muted' in flags:
+                unread_count = ' M'
 
             status = 'offline'
             if 'online' in flags:
@@ -299,15 +279,13 @@ class ChatView:
                 cursor = '> '
 
             for attr, elem in zip(
-                self._chat_attributes(is_selected, title, status, 'unseen' in flags),
+                self._chat_attributes(is_selected, title, status, 'muted' in flags),
                 [cursor, f"{date} ", title, unread_count],
-                # [f"{date} ", title, sender_label, f" {last_msg}"],
             ):
                 if not elem:
                     continue
                 item = truncate_to_len(
                     elem, max(0, width - offset)
-                    # elem, max(0, width - offset - flags_len)
                 )
 
                 if len(item) > 1:
