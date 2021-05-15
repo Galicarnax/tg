@@ -1,6 +1,6 @@
 import curses
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from _curses import window  # type: ignore
@@ -656,8 +656,8 @@ def get_date(chat: Dict[str, Any]) -> str:
     date_fmt = "%b%y"
     if datetime.today().date() == dt.date():
         date_fmt = "%H:%M"
-    # elif dt.date() == datetime.date.today() - datetime.timedelta(days=1):
-    #     return 'Yestd'
+    elif dt.date() == datetime.today().date() - timedelta(days=1):
+        return 'yestd'
     elif datetime.today().year == dt.year:
         date_fmt = "%d%b"
     return dt.strftime(date_fmt)
