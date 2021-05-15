@@ -26,6 +26,7 @@ from tg.utils import (
 from tg.views import View
 
 from subprocess import run as runproc, check_output as readproc
+from threading import Timer
 
 log = logging.getLogger(__name__)
 
@@ -110,8 +111,7 @@ class Controller:
         self.is_running = True
         self.tg = tg
         self.chat_size = 0.5
-        self.layout = 'English'
-        # self.i3wm = Connection()
+        self.timer = None
 
     @bind(msg_handler, ["c"])
     def show_chat_info(self) -> None:
@@ -327,7 +327,7 @@ class Controller:
             self.present_info("Message reply sent")
         else:
             self.present_info("Message reply wasn't sent")
-        # self.i3wm.send_tick('english')
+        self.become_offline()
 
     @bind(msg_handler, ["R"])
     def reply_with_long_message(self) -> None:
@@ -353,11 +353,13 @@ class Controller:
                     self.present_info("Message sent")
                 else:
                     self.present_info("Message wasn't sent")
+        self.become_offline()
 
     @bind(msg_handler, ["a"])
     def mark_as_read(self) -> None:
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         self.model.view_all_msgs()
+        self.become_offline()
 
 
     @bind(msg_handler, ["i"])
@@ -377,6 +379,18 @@ class Controller:
         else:
             self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
             self.present_info("Message wasn't sent")
+        self.become_offline()
+
+    def become_offline(self):
+        self.timer = Timer(0.5, self.become_offline_)
+        self.timer.start()
+
+    @bind(chat_handler, ["f"])
+    @bind(msg_handler, ["f"])
+    def become_offline_(self) -> None:
+        self.tg.become_online()
+        self.tg.become_offline()
+
 
     @bind(msg_handler, ["I"])
     def write_long_msg(self) -> None:
@@ -401,6 +415,7 @@ class Controller:
                         chat_id, ChatAction.chatActionCancel
                     )
                     self.present_info("Message wasn't sent")
+        self.become_offline()
 
     @bind(msg_handler, ["dd"])
     def delete_msgs(self) -> None:
@@ -446,6 +461,7 @@ class Controller:
 
         fun = mime_map.get(mime, self.tg.send_doc)
         fun(file_path, chat_id)
+        self.become_offline()
 
     @bind(msg_handler, ["sd"])
     def send_document(self) -> None:
@@ -742,7 +758,7 @@ class Controller:
         self.resize()
 
     @bind(chat_handler, ["i"])
-    def handle_msgs_2(self) -> Optional[str]:
+    def write_short_msg_from_chat_list(self) -> Optional[str]:
         self.write_short_msg()
         rc = self.handle(msg_handler, 0.2)
         if rc == "QUIT":

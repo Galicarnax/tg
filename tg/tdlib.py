@@ -344,6 +344,37 @@ class Tdlib(Telegram):
         }
         return self._send_data(data)
 
+
+    def get_own_status(self) -> AsyncResult:
+        data = {
+            '@type': 'getOption',
+            'name': 'online',
+        }
+        return self._send_data(data)
+
+
+    def become_online(self) -> AsyncResult:
+        data = {
+            '@type': 'setOption',
+            'name': 'online',
+            'value': {
+                '@type': 'optionValueBoolean',
+                'value': True
+            },
+        }
+        return self._send_data(data)
+
+    def become_offline(self) -> AsyncResult:
+        data = {
+            '@type': 'setOption',
+            'name': 'online',
+            'value': {
+                '@type': 'optionValueBoolean',
+                'value': False
+            },
+        }
+        return self._send_data(data)
+
     def send_chat_action(
         self, chat_id: int, action: ChatAction, progress: int = None
     ) -> AsyncResult:
