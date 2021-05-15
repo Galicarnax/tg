@@ -7,8 +7,6 @@ from queue import Queue
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional
 
-from subprocess import run as runproc, check_output as procoutput
-
 from telegram.utils import AsyncResult
 
 from tg import config
@@ -27,6 +25,8 @@ from tg.utils import (
 )
 from tg.views import View
 
+from subprocess import run as runproc, check_output as readproc
+
 log = logging.getLogger(__name__)
 
 # start scrolling to next page when number of the msgs left is less than value.
@@ -37,8 +37,40 @@ MSGS_LEFT_SCROLL_THRESHOLD = 2
 REPLY_MSG_PREFIX = "# >"
 HandlerType = Callable[[Any], Optional[str]]
 
+CURRENT_INSERT_LAYOUT = config.DEFAULT_LAYOUT
+
 chat_handler: Dict[str, HandlerType] = {}
 msg_handler: Dict[str, HandlerType] = {}
+
+
+
+def kbswitch(func):
+    """automatically switch to previous keyboard layout in 'insert' mode"""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global CURRENT_INSERT_LAYOUT
+        if config.DEFAULT_LAYOUT != CURRENT_INSERT_LAYOUT:
+            try:
+                tmp_cmd = []
+                for s in config.CMD_SET_LAYOUT:
+                    tmp_cmd.append(s.replace('{new_layout}', CURRENT_INSERT_LAYOUT))
+                runproc(tmp_cmd)
+            except:
+                pass
+        result = func(*args, **kwargs)
+        try:
+            CURRENT_INSERT_LAYOUT = readproc(config.CMD_GET_LAYOUT, shell=True).decode().strip()
+            if CURRENT_INSERT_LAYOUT != config.DEFAULT_LAYOUT:
+                tmp_cmd = []
+                for s in config.CMD_SET_LAYOUT:
+                    tmp_cmd.append(s.replace('{new_layout}', config.DEFAULT_LAYOUT))
+                runproc(tmp_cmd)
+        except Exception as e:
+            pass
+        return result
+
+    return wrapper
 
 
 def bind(
@@ -278,6 +310,7 @@ class Controller:
         self.prev_msg(10)
 
     @bind(msg_handler, ["r"])
+    @kbswitch
     def reply_message(self) -> None:
         if not self.can_send_msg():
             self.present_info("Can't send msg in this chat")
@@ -320,9 +353,8 @@ class Controller:
                     self.present_info("Message wasn't sent")
 
     @bind(msg_handler, ["a", "i"])
+    @kbswitch
     def write_short_msg(self) -> None:
-        if 'Russian' in self.layout:
-            runproc(['swaymsg', 'input * xkb_switch_layout 1'])
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
@@ -336,9 +368,6 @@ class Controller:
         else:
             self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
             self.present_info("Message wasn't sent")
-        # self.i3wm.send_tick('english')
-        self.layout = procoutput("""swaymsg -r -t get_inputs | jq '[ .[] | select(.type == "keyboard") ] | .[1] | .xkb_active_layout_name'""", shell=True).decode().strip()
-        runproc(['swaymsg', 'input * xkb_switch_layout 0'])
 
     @bind(msg_handler, ["A", "I"])
     def write_long_msg(self) -> None:
