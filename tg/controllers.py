@@ -111,7 +111,6 @@ class Controller:
         self.is_running = True
         self.tg = tg
         self.chat_size = 0.5
-        self.timer = None
 
     @bind(msg_handler, ["c"])
     def show_chat_info(self) -> None:
@@ -382,8 +381,8 @@ class Controller:
         self.become_offline()
 
     def become_offline(self):
-        self.timer = Timer(0.5, self.become_offline_)
-        self.timer.start()
+        timer = Timer(0.5, self.become_offline_)
+        timer.start()
 
     @bind(chat_handler, ["f"])
     @bind(msg_handler, ["f"])
@@ -758,6 +757,16 @@ class Controller:
         self.chat_size = 0.5
         self.resize()
 
+    @bind(chat_handler, ["I"])
+    def write_long_msg_from_chat_list(self) -> Optional[str]:
+        self.write_long_msg()
+        rc = self.handle(msg_handler, 0.2)
+        if rc == "QUIT":
+            return rc
+        self.chat_size = 0.5
+        self.resize()
+        self.become_offline()
+
     @bind(chat_handler, ["i"])
     def write_short_msg_from_chat_list(self) -> Optional[str]:
         self.write_short_msg()
@@ -766,6 +775,7 @@ class Controller:
             return rc
         self.chat_size = 0.5
         self.resize()
+        self.become_offline()
 
     @bind(chat_handler, ["g"])
     def top_chat(self) -> None:

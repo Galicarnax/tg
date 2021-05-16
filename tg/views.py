@@ -276,7 +276,7 @@ class ChatView:
 
             cursor = '  '
             if is_selected:
-                cursor = '> '
+                cursor = '▶ '
 
             for attr, elem in zip(
                 self._chat_attributes(is_selected, title, status, 'muted' in flags),
