@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from _curses import window  # type: ignore
 
 from tg import config
-from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red, blink
+from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red, blink, italic, underline
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
@@ -206,7 +206,7 @@ class ChatView:
         return color
 
     def _chat_attributes(
-            self, is_selected: bool, title: str, status: str, muted: bool
+            self, is_selected: bool, title: str, status: str, muted: bool, is_typing: bool
     ) -> Tuple[int, ...]:
         bgc = -1
         if is_selected:
@@ -225,10 +225,14 @@ class ChatView:
         if not muted: # TODO and if read by other user
             uc = uc | bold | blink
 
+        tc = get_color(title_color, bgc)
+        if is_typing:
+            tc = tc | bold | reverse
+
         attrs = (
             get_color(yellow, bgc),
             get_color(101, bgc),
-            get_color(title_color, bgc),
+            tc,
             uc,
             self._msg_color(is_selected),
         )
@@ -282,10 +286,16 @@ class ChatView:
 
             cursor = '  '
             if is_selected:
-                cursor = '▶ '
+                # cursor = '▶ '
+                cursor = '> '
+
+            is_typing = False
+            chat_id = self.model.chats.id_by_index(i-1)
+            if chat_id in self.model.typing_chats:
+                is_typing = True
 
             for attr, elem in zip(
-                self._chat_attributes(is_selected, title, status, 'muted' in flags),
+                self._chat_attributes(is_selected, title, status, 'muted' in flags, is_typing),
                 [cursor, f"{date} ", title, unread_count],
             ):
                 if not elem:

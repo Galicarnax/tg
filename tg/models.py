@@ -31,6 +31,7 @@ class Model:
         self.downloads: Dict[int, Tuple[int, int]] = {}
         self.selected: Dict[int, List[int]] = defaultdict(list)
         self.copied_msgs: Tuple[int, List[int]] = (0, [])
+        self.typing_chats = list()
 
     def get_me(self) -> Dict[str, Any]:
         return self.users.get_me()

@@ -328,6 +328,8 @@ def update_user_chat_action(
     chat_id = update["chat_id"]
     if update["action"]["@type"] == "chatActionCancel":
         controller.model.users.actions.pop(chat_id, None)
+        controller.model.typing_chats.remove(chat_id)
     else:
         controller.model.users.actions[chat_id] = update
+        controller.model.typing_chats.append(chat_id)
     controller.render()

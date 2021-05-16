@@ -394,6 +394,7 @@ class Controller:
 
 
     @bind(msg_handler, ["I"])
+    @kbswitch
     def write_long_msg(self) -> None:
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not self.can_send_msg() or chat_id is None:

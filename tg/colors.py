@@ -23,6 +23,7 @@ blink = curses.A_BLINK
 reverse = curses.A_REVERSE
 underline = curses.A_UNDERLINE
 invisible = curses.A_INVIS
+italic = curses.A_ITALIC
 dim = curses.A_DIM
 
 
