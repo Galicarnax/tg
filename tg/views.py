@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from _curses import window  # type: ignore
 
 from tg import config
-from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red
+from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, green, blue, red, blink
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
@@ -221,11 +221,15 @@ class ChatView:
         elif status == 'bot':
             title_color = 108
 
+        uc = get_color(yellow if not muted else 238, bgc)
+        if not muted:
+            uc = uc | bold | blink
+
         attrs = (
             get_color(yellow, bgc),
             get_color(101, bgc),
             get_color(title_color, bgc),
-            get_color(yellow if not muted else 238, bgc) | bold,
+            uc,
             self._msg_color(is_selected),
         )
 
@@ -238,6 +242,8 @@ class ChatView:
     self, current: int, chats: List[Dict[str, Any]], title: str = "Chats"
     ) -> None:
         self.win.erase()
+        if self.w == 0:
+            return
         line = curses.ACS_VLINE  # type: ignore
         width = self.w - 1
 

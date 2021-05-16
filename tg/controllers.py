@@ -27,6 +27,7 @@ from tg.views import View
 
 from subprocess import run as runproc, check_output as readproc
 from threading import Timer
+from time import sleep
 
 log = logging.getLogger(__name__)
 
@@ -311,7 +312,6 @@ class Controller:
     @bind(msg_handler, ["r"])
     @kbswitch
     def reply_message(self) -> None:
-        self.mark_as_read()
         if not self.can_send_msg():
             self.present_info("Can't send msg in this chat")
             return
@@ -324,13 +324,13 @@ class Controller:
             self.model.view_all_msgs()
             self.tg.reply_message(chat_id, reply_to_msg, msg)
             self.present_info("Message reply sent")
+            self.mark_as_read()
+            self.become_offline()
         else:
             self.present_info("Message reply wasn't sent")
-        self.become_offline()
 
     @bind(msg_handler, ["R"])
     def reply_with_long_message(self) -> None:
-        self.mark_as_read()
         if not self.can_send_msg():
             self.present_info("Can't send msg in this chat")
             return
@@ -350,9 +350,10 @@ class Controller:
                     self.model.view_all_msgs()
                     self.tg.reply_message(chat_id, reply_to_msg, replied_msg)
                     self.present_info("Message sent")
+                    self.mark_as_read()
+                    self.become_offline()
                 else:
                     self.present_info("Message wasn't sent")
-        self.become_offline()
 
     @bind(msg_handler, ["a"])
     def mark_as_read(self) -> None:
@@ -364,7 +365,6 @@ class Controller:
     @bind(msg_handler, ["i"])
     @kbswitch
     def write_short_msg(self) -> None:
-        self.mark_as_read()
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
@@ -375,10 +375,11 @@ class Controller:
         if msg := self.view.status.get_input(prefix=f'msg {ch__["title"]}: '):
             self.model.send_message(text=msg)
             self.present_info("Message sent")
+            self.mark_as_read()
+            self.become_offline()
         else:
             self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
             self.present_info("Message wasn't sent")
-        self.become_offline()
 
     def become_offline(self):
         timer = Timer(0.5, self.become_offline_)
@@ -388,12 +389,12 @@ class Controller:
     @bind(msg_handler, ["f"])
     def become_offline_(self) -> None:
         self.tg.become_online()
+        sleep(0.1)
         self.tg.become_offline()
 
 
     @bind(msg_handler, ["I"])
     def write_long_msg(self) -> None:
-        self.mark_as_read()
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not self.can_send_msg() or chat_id is None:
             self.present_info("Can't send msg in this chat")
@@ -409,12 +410,13 @@ class Controller:
                 if msg := f.read().strip():
                     self.model.send_message(text=msg)
                     self.present_info("Message sent")
+                    self.mark_as_read()
+                    self.become_offline()
                 else:
                     self.tg.send_chat_action(
                         chat_id, ChatAction.chatActionCancel
                     )
                     self.present_info("Message wasn't sent")
-        self.become_offline()
 
     @bind(msg_handler, ["dd"])
     def delete_msgs(self) -> None:
@@ -427,7 +429,6 @@ class Controller:
     @bind(msg_handler, ["S"])
     def choose_and_send_file(self) -> None:
         """Call file picker and send chosen file based on mimetype"""
-        self.mark_as_read()
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         file_path = None
         if not chat_id:
@@ -460,6 +461,7 @@ class Controller:
 
         fun = mime_map.get(mime, self.tg.send_doc)
         fun(file_path, chat_id)
+        self.mark_as_read()
         self.become_offline()
 
     @bind(msg_handler, ["sd"])
@@ -765,7 +767,7 @@ class Controller:
             return rc
         self.chat_size = 0.5
         self.resize()
-        self.become_offline()
+        # self.become_offline()
 
     @bind(chat_handler, ["i"])
     def write_short_msg_from_chat_list(self) -> Optional[str]:
@@ -775,7 +777,7 @@ class Controller:
             return rc
         self.chat_size = 0.5
         self.resize()
-        self.become_offline()
+        # self.become_offline()
 
     @bind(chat_handler, ["g"])
     def top_chat(self) -> None:
