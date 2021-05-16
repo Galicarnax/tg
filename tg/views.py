@@ -222,7 +222,7 @@ class ChatView:
             title_color = 108
 
         uc = get_color(yellow if not muted else 238, bgc)
-        if not muted:
+        if not muted: # TODO and if read by other user
             uc = uc | bold | blink
 
         attrs = (

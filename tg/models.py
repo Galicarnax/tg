@@ -704,6 +704,9 @@ class UserModel:
     def get_status(self, user_id: int) -> str:
         if user_id not in self.users:
             return ""
+        if self.is_bot(user_id):
+            return "bot"
+
         user_status = self.users[user_id]["status"]
 
         try:
