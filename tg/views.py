@@ -161,6 +161,8 @@ class StatusView:
                     buff = ''
                 elif key in (7, 27):  # (^G, <esc>) cancel
                     return None
+                elif key == 92: # double the backslash, since it is used as escape symbol
+                    buff += chr(key) + chr(key)
                 elif key == 23: # ^W - delete previous word
                     if buff:
                         last_space = buff.rfind(' ')
