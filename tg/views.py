@@ -115,6 +115,7 @@ class StatusView:
         self.x = 0
         self.stdscr = stdscr
         self.win = Win(stdscr.subwin(self.h, self.w, self.y, self.x))
+        self.win.keypad(True)
         self._refresh = self.win.refresh
 
     def resize(self, rows: int, cols: int) -> None:
@@ -141,37 +142,42 @@ class StatusView:
                 key = self.win.get_wch(
                     0, min(string_len_dwc(buff + prefix), self.w - 1)
                 )
-                key = ord(key)
-                if key == 10:  # return
-                    break
-                elif key == 127:  # del
-                    if buff:
-                        buff = buff[:-1]
-                elif key == 8:  # ^H - delete previous char
-                    if buff:
-                        buff = buff[:-1]
-                elif key == 23: # ^W - delete previous word
-                    if buff:
-                        last_space = buff.rfind(' ')
-                        if last_space > 0:
-                            buff = buff[:last_space]
-                        else:
-                            buff = ''
-                elif key == 21: # ^U - delete to the beginning of line
-                    buff = ''
-                elif key in (7, 27):  # (^G, <esc>) cancel
-                    return None
-                elif key == 92: # double the backslash, since it is used as escape symbol
-                    buff += chr(key) + chr(key)
-                elif key == 23: # ^W - delete previous word
-                    if buff:
-                        last_space = buff.rfind(' ')
-                        if last_space > 0:
-                            buff = buff[:last_space]
-                        else:
-                            buff = ''
-                elif chr(key).isprintable():
-                    buff += chr(key)
+                if isinstance(key, str):
+                    key = ord(key)
+                    if key == 10:  # return
+                        break
+                    elif key == 127:  # del
+                        if buff:
+                            buff = buff[:-1]
+                    elif key == 8:  # ^H - delete previous char
+                        if buff:
+                            buff = buff[:-1]
+                    elif key == 23: # ^W - delete previous word
+                        if buff:
+                            last_space = buff.rfind(' ')
+                            if last_space > 0:
+                                buff = buff[:last_space]
+                            else:
+                                buff = ''
+                    elif key == 21: # ^U - delete to the beginning of line
+                        buff = ''
+                    elif key in (7, 27):  # (^G, <esc>) cancel
+                        return None
+                    elif key == 92: # double the backslash, since it is used as escape symbol
+                        buff += 2*chr(key)
+                    elif key == 23: # ^W - delete previous word
+                        if buff:
+                            last_space = buff.rfind(' ')
+                            if last_space > 0:
+                                buff = buff[:last_space]
+                            else:
+                                buff = ''
+                    elif chr(key).isprintable():
+                        buff += chr(key)
+
+                else: # get_wch returned integer - function/arrow keys,...
+                    continue
+
         finally:
             self.win.clear()
             curses.curs_set(0)
