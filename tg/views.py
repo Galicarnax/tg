@@ -132,25 +132,29 @@ class StatusView:
     def get_input(self, prefix: str = ":") -> Optional[str]:
         curses.curs_set(1)
         buff = ""
-        pos = 0
-        x0 = 0
+        pos = 0 # cursor position with the buffer
+        x0 = 0 # index of the first buffer char displayed
+        w = self.w - string_len_dwc(prefix)
 
         try:
             while True:
                 self.win.erase()
-                line = buff[-(self.w - 1) :]
-                self.win.addstr(0, 0, f"{prefix}{line}")
-
+                self.win.addstr(0, 0, prefix, get_color(yellow, -1) | bold )
+                # line = buff[-(self.w - 1) :]
+                line = buff[x0:x0+w-1]
+                # self.win.addstr(0, 0, f"{prefix}{line}")
+                self.win.addstr(0, string_len_dwc(prefix), line)
+                x = pos - x0 + 1
+                if pos < len(line):
+                    x -= 1
                 key = self.win.get_wch(
-                    0, min(string_len_dwc(buff[:pos] + prefix), self.w - 1)
+                    0, min(string_len_dwc(line[:x] + prefix), self.w - 1)
                 )
+
                 if isinstance(key, str):
                     key = ord(key)
                     if key == 10:  # return
                         break
-                    elif key == 127:  # del
-                        if buff:
-                            buff = buff[:-1]
                     elif key == 8:  # ^H - delete previous char
                         if buff:
                             buff = buff[:-1]
@@ -165,17 +169,35 @@ class StatusView:
                         buff = ''
                     elif key in (7, 27):  # (^G, <esc>) cancel
                         return None
-                    elif key == 92: # double the backslash, since it is used as escape symbol
-                        buff += 2*chr(key)
                     elif chr(key).isprintable():
                         buff = buff[:pos] + chr(key) + buff[pos:]
                         pos += 1
 
                 else: # get_wch returned integer - function/arrow keys,...
                     if key == curses.KEY_LEFT:
-                        if pos:
+                        # if pos:
                             pos -= 1
-                            (_, x) = self.win.getyx()
+                    elif key == curses.KEY_RIGHT:
+                        # if pos < len(buff) - 1:
+                            pos += 1
+                    elif key == curses.KEY_HOME:
+                        pos = 0
+                    elif key == curses.KEY_END:
+                        pos = len(buff) - 1
+                    elif key == curses.KEY_DC:
+                        buff = buff[:pos] + buff[pos+1:]
+                    elif key == curses.KEY_BACKSPACE:
+                        buff = buff[:pos-1] + buff[pos:]
+                        pos -= 1
+
+                if pos > len(buff) - 1:
+                    pos = len(buff) - 1
+                if pos < 0:
+                    pos = 0
+                if pos > x0 + w:
+                    x0 = pos - w
+                elif pos < x0:
+                    x0 = pos
 
         finally:
             self.win.clear()
