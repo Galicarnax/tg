@@ -10,7 +10,7 @@ from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, gr
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
-from tg.utils import get_color_by_str, num, string_len_dwc, truncate_to_len
+from tg.utils import get_color_by_str, num, string_len_dwc, truncate_to_len, word_back, word_forward
 
 from re import compile
 
@@ -132,7 +132,7 @@ class StatusView:
     def get_input(self, prefix: str = ":") -> Optional[str]:
         curses.curs_set(1)
         buff = ""
-        pos = 0 # cursor position with the buffer
+        pos = 0 # cursor position with the buffer, uses _only_ len for length calculations
         x0 = 0 # index of the first buffer char displayed
         w = self.w - string_len_dwc(prefix)
 
@@ -144,11 +144,9 @@ class StatusView:
                 line = buff[x0:x0+w-1]
                 # self.win.addstr(0, 0, f"{prefix}{line}")
                 self.win.addstr(0, string_len_dwc(prefix), line)
-                x = pos - x0 + 1
-                if pos < len(line):
-                    x -= 1
                 key = self.win.get_wch(
-                    0, min(string_len_dwc(line[:x] + prefix), self.w - 1)
+                    # 0, min(string_len_dwc(line[:x] + prefix), self.w-1 )
+                    0, string_len_dwc(line[:pos-x0] + prefix)
                 )
 
                 if isinstance(key, str):
@@ -156,8 +154,8 @@ class StatusView:
                     if key == 10:  # return
                         break
                     elif key == 8:  # ^H - delete previous char
-                        if buff:
-                            buff = buff[:-1]
+                        buff = buff[:pos-1] + buff[pos:]
+                        pos -= 1
                     elif key == 23: # ^W - delete previous word
                         if buff:
                             last_space = buff.rfind(' ')
@@ -183,21 +181,27 @@ class StatusView:
                     elif key == curses.KEY_HOME:
                         pos = 0
                     elif key == curses.KEY_END:
-                        pos = len(buff) - 1
+                        pos = len(buff)
                     elif key == curses.KEY_DC:
                         buff = buff[:pos] + buff[pos+1:]
                     elif key == curses.KEY_BACKSPACE:
                         buff = buff[:pos-1] + buff[pos:]
                         pos -= 1
+                    elif key == 513: # ctrl+delete: delete word to the right
+                        pass
+                    elif key == 539: # ctrl+left: move left by a word
+                        pos = word_back(buff[:pos])
+                    elif key == 554: # ctrl+right: move right by a word
+                        pos += word_forward(buff[pos:])
 
-                if pos > len(buff) - 1:
-                    pos = len(buff) - 1
+                if pos > len(buff):
+                    pos = len(buff)
                 if pos < 0:
                     pos = 0
-                if pos > x0 + w:
-                    x0 = pos - w
-                elif pos < x0:
-                    x0 = pos
+                if string_len_dwc(buff[:pos]) > x0 + w - 1:
+                    x0 = string_len_dwc(buff[:pos]) - w + 1
+                elif string_len_dwc(buff[:pos]) < x0:
+                    x0 = string_len_dwc(buff[:pos])
 
         finally:
             self.win.clear()

@@ -361,6 +361,15 @@ class Controller:
         self.model.view_all_msgs()
         self.become_offline()
 
+    @bind(chat_handler, ["i"])
+    def write_short_msg_from_chat_list(self) -> Optional[str]:
+        self.write_short_msg()
+        # rc = self.handle(msg_handler, 0.2)
+        # if rc == "QUIT":
+        #     return rc
+        # self.chat_size = 0.5
+        # self.resize()
+        # # self.become_offline()
 
     @bind(msg_handler, ["i"])
     @kbswitch
@@ -378,7 +387,8 @@ class Controller:
             self.mark_as_read()
             self.become_offline()
         else:
-            self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
+            if config.NOTIFY_TYPING:
+                self.tg.send_chat_action(chat_id, ChatAction.chatActionCancel)
             self.present_info("Message wasn't sent")
 
     def become_offline(self):
@@ -392,6 +402,15 @@ class Controller:
         sleep(0.1)
         self.tg.become_offline()
 
+    @bind(chat_handler, ["I"])
+    def write_long_msg_from_chat_list(self) -> Optional[str]:
+        self.write_long_msg()
+        rc = self.handle(msg_handler, 0.2)
+        if rc == "QUIT":
+            return rc
+        self.chat_size = 0.5
+        self.resize()
+        # self.become_offline()
 
     @bind(msg_handler, ["I"])
     @kbswitch
@@ -760,25 +779,6 @@ class Controller:
         self.chat_size = 0.5
         self.resize()
 
-    @bind(chat_handler, ["I"])
-    def write_long_msg_from_chat_list(self) -> Optional[str]:
-        self.write_long_msg()
-        rc = self.handle(msg_handler, 0.2)
-        if rc == "QUIT":
-            return rc
-        self.chat_size = 0.5
-        self.resize()
-        # self.become_offline()
-
-    @bind(chat_handler, ["i"])
-    def write_short_msg_from_chat_list(self) -> Optional[str]:
-        self.write_short_msg()
-        rc = self.handle(msg_handler, 0.2)
-        if rc == "QUIT":
-            return rc
-        self.chat_size = 0.5
-        self.resize()
-        # self.become_offline()
 
     @bind(chat_handler, ["g"])
     def top_chat(self) -> None:
