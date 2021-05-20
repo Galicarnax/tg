@@ -132,6 +132,8 @@ class StatusView:
     def get_input(self, prefix: str = ":") -> Optional[str]:
         curses.curs_set(1)
         buff = ""
+        pos = 0
+        x0 = 0
 
         try:
             while True:
@@ -140,7 +142,7 @@ class StatusView:
                 self.win.addstr(0, 0, f"{prefix}{line}")
 
                 key = self.win.get_wch(
-                    0, min(string_len_dwc(buff + prefix), self.w - 1)
+                    0, min(string_len_dwc(buff[:pos] + prefix), self.w - 1)
                 )
                 if isinstance(key, str):
                     key = ord(key)
@@ -165,18 +167,15 @@ class StatusView:
                         return None
                     elif key == 92: # double the backslash, since it is used as escape symbol
                         buff += 2*chr(key)
-                    elif key == 23: # ^W - delete previous word
-                        if buff:
-                            last_space = buff.rfind(' ')
-                            if last_space > 0:
-                                buff = buff[:last_space]
-                            else:
-                                buff = ''
                     elif chr(key).isprintable():
-                        buff += chr(key)
+                        buff = buff[:pos] + chr(key) + buff[pos:]
+                        pos += 1
 
                 else: # get_wch returned integer - function/arrow keys,...
-                    continue
+                    if key == curses.KEY_LEFT:
+                        if pos:
+                            pos -= 1
+                            (_, x) = self.win.getyx()
 
         finally:
             self.win.clear()
