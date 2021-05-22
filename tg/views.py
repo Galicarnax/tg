@@ -167,6 +167,9 @@ class StatusView:
                         pos = len(buff)
                     elif key in (7, 27):  # (^G, <esc>) cancel
                         return None
+                    elif key == 127: # backspace on some terminals
+                        buff = buff[:pos-1] + buff[pos:]
+                        pos -= 1
                     elif chr(key).isprintable():
                         buff = buff[:pos] + chr(key) + buff[pos:]
                         pos += 1
@@ -185,13 +188,18 @@ class StatusView:
                     elif key == curses.KEY_BACKSPACE:
                         buff = buff[:pos-1] + buff[pos:]
                         pos -= 1
-                    elif key == 513: # ctrl+delete: delete word to the right
-                        npos = pos + word_forth(buff[pos:])
-                        buff = buff[:pos] + buff[npos:]
-                    elif key == 539: # ctrl+left: move left by a word
-                        pos = word_back(buff[:pos])
-                    elif key == 554: # ctrl+right: move right by a word
-                        pos += word_forth(buff[pos:])
+                    else:
+                        # the integer result of get_wch for ctrl+arrows, ctrl+del,...
+                        # is terminal-dependent. getkey() returns key names that seem more universal
+                        curses.ungetch(key)
+                        key = self.win.getkey()
+                        if key == 'kDC5': # ctrl+delete: delete word to the right
+                            npos = pos + word_forth(buff[pos:])
+                            buff = buff[:pos] + buff[npos:]
+                        elif key == 'kLFT5': # ctrl+left: move left by a word
+                            pos = word_back(buff[:pos])
+                        elif key == 'kRIT5': # ctrl+right: move right by a word
+                            pos += word_forth(buff[pos:])
 
                 if pos > len(buff):
                     pos = len(buff)
