@@ -10,7 +10,7 @@ from tg.colors import bold, cyan, get_color, magenta, reverse, white, yellow, gr
 from tg.models import Model, UserModel
 from tg.msg import MsgProxy
 from tg.tdlib import ChatType, get_chat_type, is_group
-from tg.utils import get_color_by_str, num, string_len_dwc, truncate_to_len, word_back, word_forward
+from tg.utils import get_color_by_str, num, string_len_dwc, truncate_to_len, word_back, word_forth
 
 from re import compile
 
@@ -134,18 +134,16 @@ class StatusView:
         buff = ""
         pos = 0 # cursor position with the buffer, uses _only_ len for length calculations
         x0 = 0 # index of the first buffer char displayed
-        w = self.w - string_len_dwc(prefix)
+        wline = self.w - string_len_dwc(prefix)
 
         try:
             while True:
                 self.win.erase()
                 self.win.addstr(0, 0, prefix, get_color(yellow, -1) | bold )
-                # line = buff[-(self.w - 1) :]
-                line = buff[x0:x0+w-1]
+                line = buff[x0:x0+wline-1]
                 # self.win.addstr(0, 0, f"{prefix}{line}")
                 self.win.addstr(0, string_len_dwc(prefix), line)
                 key = self.win.get_wch(
-                    # 0, min(string_len_dwc(line[:x] + prefix), self.w-1 )
                     0, string_len_dwc(line[:pos-x0] + prefix)
                 )
 
@@ -157,27 +155,27 @@ class StatusView:
                         buff = buff[:pos-1] + buff[pos:]
                         pos -= 1
                     elif key == 23: # ^W - delete previous word
-                        if buff:
-                            last_space = buff.rfind(' ')
-                            if last_space > 0:
-                                buff = buff[:last_space]
-                            else:
-                                buff = ''
+                        npos = word_back(buff[:pos])
+                        buff = buff[:npos] + buff[pos:]
+                        pos = npos
                     elif key == 21: # ^U - delete to the beginning of line
-                        buff = ''
+                        buff = buff[pos:]
+                        pos = 0
+                    elif key == 2: # ^B - same as KEY_HOME
+                        pos = 0
+                    elif key == 5: # ^E - same as KEY_END
+                        pos = len(buff)
                     elif key in (7, 27):  # (^G, <esc>) cancel
                         return None
                     elif chr(key).isprintable():
                         buff = buff[:pos] + chr(key) + buff[pos:]
                         pos += 1
 
-                else: # get_wch returned integer - function/arrow keys,...
+                else: # get_wch returned integer: function/arrow keys
                     if key == curses.KEY_LEFT:
-                        # if pos:
-                            pos -= 1
+                        pos -= 1
                     elif key == curses.KEY_RIGHT:
-                        # if pos < len(buff) - 1:
-                            pos += 1
+                        pos += 1
                     elif key == curses.KEY_HOME:
                         pos = 0
                     elif key == curses.KEY_END:
@@ -188,20 +186,24 @@ class StatusView:
                         buff = buff[:pos-1] + buff[pos:]
                         pos -= 1
                     elif key == 513: # ctrl+delete: delete word to the right
-                        pass
+                        npos = pos + word_forth(buff[pos:])
+                        buff = buff[:pos] + buff[npos:]
                     elif key == 539: # ctrl+left: move left by a word
                         pos = word_back(buff[:pos])
                     elif key == 554: # ctrl+right: move right by a word
-                        pos += word_forward(buff[pos:])
+                        pos += word_forth(buff[pos:])
 
                 if pos > len(buff):
                     pos = len(buff)
                 if pos < 0:
                     pos = 0
-                if string_len_dwc(buff[:pos]) > x0 + w - 1:
-                    x0 = string_len_dwc(buff[:pos]) - w + 1
-                elif string_len_dwc(buff[:pos]) < x0:
-                    x0 = string_len_dwc(buff[:pos])
+
+                # check if we need to shift the displayed part along the buffer
+                ldwc = string_len_dwc(buff[:pos])
+                if x0 < ldwc - wline + 1:
+                    x0 = ldwc - wline + 1
+                elif x0 > ldwc:
+                    x0 = ldwc
 
         finally:
             self.win.clear()
@@ -209,7 +211,7 @@ class StatusView:
             curses.cbreak()
             curses.noecho()
 
-        return buff
+        return buff.replace('\\', '\\\\')
 
 
 class ChatView:

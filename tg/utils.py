@@ -194,7 +194,7 @@ def string_len_dwc(string: str) -> int:
     """Returns string len including count for double width characters"""
     return sum(1 + (unicodedata.east_asian_width(c) in "WF") for c in string)
 
-def word_forward(string: str) -> int:
+def word_forth(string: str) -> int:
     """Given a string, return the index of the first char of the next word"""
     ind = string.find(' ')
     if ind < 0:
@@ -204,12 +204,10 @@ def word_forward(string: str) -> int:
 
 
 def word_back(string: str) -> int:
-    """Given a string, return the index of the first char of the last word"""
+    """Given a string, return the index of the first char of the previous word"""
     s = string.rstrip()
-    last_space = s.rfind(' ')
-    if last_space < 0:
-        last_space = 0
-    return last_space
+    prev_space = s.rfind(' ')
+    return prev_space + 1
 
 def truncate_to_len(string: str, width: int) -> str:
     real_len = string_len_dwc(string)
