@@ -287,6 +287,36 @@ def set_shorter_esc_delay(delay: int = 25) -> None:
     os.environ.setdefault("ESCDELAY", str(delay))
 
 
+def pretty_ts_short(ts: int) -> str:
+    now = datetime.utcnow()
+    diff = now - datetime.utcfromtimestamp(ts)
+    second_diff = diff.seconds
+    day_diff = diff.days
+
+    if day_diff < 0:
+        return ""
+
+    if day_diff == 0:
+        if second_diff < 120:
+            return "s"
+        if second_diff < 1800:
+            return "m"
+        if second_diff < 3*3600:
+            # return f"{int(second_diff / 60)} minutes ago"
+            return "h"
+        if second_diff < 86400:
+            return "H"
+    if day_diff == 1:
+        return "d"
+    if day_diff < 7:
+        return "D"
+    if day_diff < 31:
+        return f"w"
+    if day_diff < 365:
+        return f"M"
+    return f"y"
+
+
 def pretty_ts(ts: int) -> str:
     now = datetime.utcnow()
     diff = now - datetime.utcfromtimestamp(ts)

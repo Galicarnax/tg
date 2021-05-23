@@ -297,7 +297,7 @@ def update_connection_state(
         # state exists, but when it's "Ready" we want to show "Chats"
         # "connectionStateReady": "Ready",
     }
-    controller.model.chats.title = states.get(state, "Chats")
+    controller.model.chats.title = states.get(state, "")
     controller.render_chats()
 
 

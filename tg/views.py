@@ -32,6 +32,11 @@ MULTICHAR_KEYBINDINGS = (
 )
 
 
+def mylog(s):
+    fff = open('/home/max/fff' , 'a')
+    fff.write(s + '\n')
+    fff.close()
+
 class Win:
     """Proxy for win object to log error and continue working"""
 
@@ -260,7 +265,7 @@ class ChatView:
         if status == 'online':
             title_color = green
         elif status == 'group':
-            title_color = blue
+            title_color = 38
         elif status == 'bot':
             title_color = 108
 
@@ -275,6 +280,7 @@ class ChatView:
         attrs = (
             get_color(yellow, bgc),
             get_color(101, bgc),
+            get_color(94, bgc),
             tc,
             uc,
             self._msg_color(is_selected),
@@ -286,7 +292,7 @@ class ChatView:
         return attrs
 
     def draw(
-    self, current: int, chats: List[Dict[str, Any]], title: str = "Chats"
+    self, current: int, chats: List[Dict[str, Any]], title: str = ""
     ) -> None:
         self.win.erase()
         if self.w == 0:
@@ -313,7 +319,7 @@ class ChatView:
                 if re_digit.match(x):
                     unread_count = f' [{x}]';
             if not unread_count and 'unseen' in flags:
-                unread_count = ' ✘'
+                unread_count = ' U'
 
             if not unread_count and 'muted' in flags:
                 unread_count = ' M'
@@ -329,17 +335,22 @@ class ChatView:
 
             cursor = '  '
             if is_selected:
-                # cursor = '▶ '
-                cursor = '> '
+                cursor = '▶ '
+                # cursor = '> '
 
             is_typing = False
             chat_id = self.model.chats.id_by_index(i-1)
             if chat_id in self.model.typing_chats:
                 is_typing = True
 
+            last_seen = self.model.users.last_seen(chat["id"])
+            if not last_seen:
+                last_seen = ' '
+            last_seen += ' '
+
             for attr, elem in zip(
                 self._chat_attributes(is_selected, title, status, 'muted' in flags, is_typing),
-                [cursor, f"{date} ", title, unread_count],
+                [cursor, f"{date} ", last_seen, title, unread_count],
             ):
                 if not elem:
                     continue

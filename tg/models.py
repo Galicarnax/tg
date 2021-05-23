@@ -16,7 +16,7 @@ from tg.tdlib import (
     UserType,
     get_chat_type,
 )
-from tg.utils import copy_to_clipboard, pretty_ts
+from tg.utils import copy_to_clipboard, pretty_ts, pretty_ts_short
 
 log = logging.getLogger(__name__)
 
@@ -370,7 +370,7 @@ class ChatModel:
         self.inactive_chats: Dict[int, Dict[str, Any]] = {}
         self.chat_ids: Set[int] = set()
         self.have_full_chat_list = False
-        self.title: str = "Chats"
+        self.title: str = ""
         self.found_chats: List[int] = []
         self.found_chat_idx: int = 0
 
@@ -702,6 +702,27 @@ class UserModel:
             self.get_user(user_id)
         self.users[user_id]["status"] = status
 
+    def last_seen(self, user_id: int) -> str:
+        if user_id not in self.users:
+            return "-"
+        if self.is_bot(user_id):
+            return "-"
+        user_status = self.users[user_id]["status"]
+        try:
+            status = UserStatus[user_status["@type"]]
+        except KeyError:
+            log.error(f"UserStatus type {user_status} not implemented")
+            return "!"
+        if status == UserStatus.userStatusEmpty:
+            return "!"
+        elif status == UserStatus.userStatusOnline:
+            return "*"
+        elif status == UserStatus.userStatusOffline:
+            was_online = user_status["was_online"]
+            ago = pretty_ts_short(was_online)
+            return ago
+        return "?"
+
     def get_status(self, user_id: int) -> str:
         if user_id not in self.users:
             return ""
@@ -753,6 +774,8 @@ class UserModel:
 
     def is_bot(self, user_id: int) -> bool:
         user = self.get_user(user_id)
+        if user and user['first_name'] == 'Telegram':
+            return True
         if user and user["type"]["@type"] == "userTypeBot":
             return True
         return False
