@@ -234,12 +234,14 @@ class ChatView:
         self.w = 0
         self.win = Win(stdscr.subwin(self.h, self.w, 0, 0))
         self._refresh = self.win.refresh
+        self.hidden = False
         self.model = model
 
     def resize(self, rows: int, cols: int, width: int) -> None:
         self.h = rows - 1
         self.w = width
-        self.win.resize(self.h, self.w)
+        if self.w:
+            self.win.resize(self.h, self.w)
 
     def _msg_color(self, is_selected: bool = False) -> int:
         color = get_color(white, -1)
@@ -294,13 +296,15 @@ class ChatView:
     def draw(
     self, current: int, chats: List[Dict[str, Any]], title: str = ""
     ) -> None:
+        if self.hidden:
+            return
         self.win.erase()
         if self.w == 0:
             return
         line = curses.ACS_VLINE  # type: ignore
         width = self.w - 1
 
-        self.win.vline(0, width, line, self.h)
+        # self.win.vline(0, width, line, self.h)
         self.win.addstr(
             0, 0, title.center(width)[:width], get_color(cyan, -1) | bold
         )
@@ -438,6 +442,7 @@ class MsgView:
         self.w = 0
         self.x = 0
         self.win = Win(self.stdscr.subwin(self.h, self.w, 0, self.x))
+        self.hidden = True
         self._refresh = self.win.refresh
         self.states = {
             "messageSendingStateFailed": "failed",
@@ -448,8 +453,9 @@ class MsgView:
         self.h = rows - 1
         self.w = width
         self.x = cols - self.w
-        self.win.resize(self.h, self.w)
-        self.win.mvwin(0, self.x)
+        if self.w:
+            self.win.resize(self.h, self.w)
+        # self.win.mvwin(0, self.x)
 
     def _get_flags(self, msg_proxy: MsgProxy) -> str:
         flags = []
@@ -646,6 +652,8 @@ class MsgView:
         min_msg_padding: int,
         chat: Dict[str, Any],
     ) -> None:
+        if self.hidden:
+            return
         self.win.erase()
         msgs_to_draw = self._collect_msgs_to_draw(
             current_msg_idx, msgs, min_msg_padding

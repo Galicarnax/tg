@@ -111,7 +111,9 @@ class Controller:
         self.queue: Queue = Queue()
         self.is_running = True
         self.tg = tg
-        self.chat_size = 0.5
+        self.chat_size = 1
+        self.view.chats.hidden = False
+        self.view.msgs.hidden = True
 
     @bind(msg_handler, ["c"])
     def show_chat_info(self) -> None:
@@ -405,10 +407,12 @@ class Controller:
     @bind(chat_handler, ["I"])
     def write_long_msg_from_chat_list(self) -> Optional[str]:
         self.write_long_msg()
-        rc = self.handle(msg_handler, 0.2)
+        rc = self.handle(msg_handler, 0)
         if rc == "QUIT":
             return rc
-        self.chat_size = 0.5
+        self.chat_size = 1
+        self.view.chats.hidden = False
+        self.view.msgs.hidden = True
         self.resize()
         # self.become_offline()
 
@@ -773,10 +777,12 @@ class Controller:
 
     @bind(chat_handler, ["l", "^J", "^E"])
     def handle_msgs(self) -> Optional[str]:
-        rc = self.handle(msg_handler, 0.2)
+        rc = self.handle(msg_handler, 0)
         if rc == "QUIT":
             return rc
-        self.chat_size = 0.5
+        self.chat_size = 1
+        self.view.chats.hidden = False
+        self.view.msgs.hidden = True
         self.resize()
 
 
@@ -846,7 +852,7 @@ class Controller:
 
     def run(self) -> None:
         try:
-            self.handle(chat_handler, 0.5)
+            self.handle(chat_handler, 1)
             self.queue.put(self.close)
         except Exception:
             log.exception("Error happened in main loop")
@@ -856,6 +862,12 @@ class Controller:
 
     def handle(self, handlers: Dict[str, HandlerType], size: float) -> str:
         self.chat_size = size
+        if size:
+            self.view.chats.hidden = False
+            self.view.msgs.hidden = True
+        else:
+            self.view.chats.hidden = True
+            self.view.msgs.hidden = False
         self.resize()
 
         while True:
