@@ -603,6 +603,7 @@ class MsgView:
                 msg = self._format_msg(
                     msg_proxy, width_limit=self.w - label_len - 1
                 )
+                # mylog(msg)
                 elements = *label_elements, f" {msg}"
                 needed_lines = 0
                 for i, msg_line in enumerate(msg.split("\n")):
@@ -664,7 +665,9 @@ class MsgView:
 
         for elements, selected, line_num in msgs_to_draw:
             column = 0
-            user = elements[1]
+            indicator = '▶ ' if selected else '  '
+            elements = (indicator, ) + elements
+            user = elements[2]
             for attr, elem in zip(
                 self._msg_attributes(selected, user), elements
             ):
@@ -691,7 +694,7 @@ class MsgView:
                 column += string_len_dwc(elem)
 
         self.win.addstr(
-            0, 0, self._msg_title(chat), get_color(cyan, -1) | bold
+            0, 0, self._msg_title(chat), get_color(202, -1) | bold
         )
 
         self._refresh()
@@ -723,15 +726,19 @@ class MsgView:
         return f"{chat['title']}: {status}".center(self.w)[: self.w]
 
     def _msg_attributes(self, is_selected: bool, user: str) -> Tuple[int, ...]:
+        bgc = -1
+        if is_selected:
+            bgc = 234
         attrs = (
-            get_color(cyan, -1),
-            get_color(get_color_by_str(user), -1),
-            get_color(yellow, -1),
-            get_color(white, -1),
+            get_color(yellow, bgc),
+            get_color(cyan, bgc),
+            get_color(get_color_by_str(user), bgc),
+            get_color(yellow, bgc),
+            get_color(white, bgc),
         )
 
-        if is_selected:
-            return tuple(attr | reverse for attr in attrs)
+        # if is_selected:
+        #     return tuple(attr | reverse for attr in attrs)
         return attrs
 
     def _parse_msg(self, msg: MsgProxy) -> str:
