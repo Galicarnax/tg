@@ -131,37 +131,58 @@ class StatusView:
         pos = 0 # cursor position within the buffer
         x0 = 0 # index of the first displayed char
         wline = self.w - string_len_dwc(prefix) # max. width of the displayed part of the buffer
+        vim_style = config.INPUT_KEYS_STYLE == 'vim'
 
         try:
             while True:
+                self.win.nodelay(False)
                 self.win.erase()
                 line = buff[x0:x0+wline-1]
                 self.win.addstr(0, 0, f"{prefix}{line}")
 
                 key = self.win.get_wch(
-                        0, string_len_dwc(line[:pos-x0] + prefix)
+                   0, string_len_dwc(line[:pos-x0] + prefix)
                 )
 
                 if isinstance(key, str):
                     key = ord(key)
                     if key == 10:  # return
                         break
-                    elif key in (7, 27):  # (^G, <esc>) cancel
-                        return None
-                    elif key == 8 or key == 127: # ^H or backspace: delete previous char
+                    # elif key in (7, 27):  # (^G, <sec>) cancel
+                    #     return None
+                    elif key == 27:
+                        self.win.nodelay(True)
+                        key = self.win.getch()
+                        if key == -1:
+                            return None
+                        else:
+                            if key == ord('b'):
+                                pos = word_back(buff[:pos])
+                            elif key == ord('f'):
+                                pos += word_forth(buff[pos:])
+                        self.win.nodelay(False)
+
+                    elif (key == 8 and vim_style) or key == 127: # ^H or backspace: delete previous char
                         buff = buff[:pos-1] + buff[pos:]
                         pos -= 1
-                    elif key == 23: # ^W: delete previous word
+                    elif key == 23 and vim_style: # ^W: delete previous word
                         npos = word_back(buff[:pos])
                         buff = buff[:npos] + buff[pos:]
                         pos = npos
                     elif key == 21: # ^U: delete to the beginning of line
                         buff = buff[pos:]
                         pos = 0
-                    elif key == 2: # ^B: same as KEY_HOME
-                        pos = 0
+                    elif key == 2: # ^B
+                        if vim_style:
+                            pos = 0 # same as KEY_HOME
+                        else:
+                            pos -= 1 # one char back
                     elif key == 5: # ^E: same as KEY_END
                         pos = len(buff)
+                    elif key == 6 and not vim_style: # ^F: one char forward
+                        pos += 1
+                    elif key == 1 and not vim_style: # ^A: to the beginning of line
+                        pos = 0
                     elif chr(key).isprintable():
                         buff = buff[:pos] + chr(key) + buff[pos:]
                         pos += 1
@@ -196,6 +217,10 @@ class StatusView:
                             pos = word_back(buff[:pos])
                         elif key == 'kRIT5': # ctrl+right: move right by a word
                             pos += word_forth(buff[pos:])
+                        elif key == 'kDC3' and not vim_style: # alt+delete
+                            npos = word_back(buff[:pos])
+                            buff = buff[:npos] + buff[pos:]
+                            pos = npos
 
                 if pos > len(buff):
                     pos = len(buff)

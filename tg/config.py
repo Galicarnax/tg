@@ -80,6 +80,8 @@ FILE_PICKER_CMD = "ranger --choosefile={file_path}"
 
 DOWNLOAD_DIR = os.path.expanduser("~/Downloads/")
 
+INPUT_KEYS_STYLE = 'emacs' # possible values: 'emacs' and 'vim'. Defaults to 'emacs' if something different
+
 if os.path.isfile(CONFIG_FILE):
     config_params = runpy.run_path(CONFIG_FILE)  # type: ignore
     for param, value in config_params.items():
