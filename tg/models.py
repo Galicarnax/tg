@@ -774,6 +774,7 @@ class UserModel:
 
     def is_bot(self, user_id: int) -> bool:
         user = self.get_user(user_id)
+
         if user and user['first_name'] == 'Telegram':
             return True
         if user and user["type"]["@type"] == "userTypeBot":
