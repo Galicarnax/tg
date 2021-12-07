@@ -120,7 +120,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "python-telegram"
-version = "0.14.0"
+version = "0.15.0"
 description = "Python library to help you build your own Telegram clients"
 category = "main"
 optional = false
@@ -228,7 +228,7 @@ pyflakes = [
     {file = "pyflakes-2.2.0.tar.gz", hash = "sha256:35b2d75ee967ea93b55750aa9edbbf72813e06a66ba54438df2cfac9e3c27fc8"},
 ]
 python-telegram = [
-    {file = "python-telegram-0.14.0.tar.gz", hash = "sha256:d3b08469ed06f6599ac4acfe89c697f3c99b55dec476c475c237f6decf238376"},
+    {file = "python-telegram-0.15.0.tar.gz", hash = "sha256:d3b08469ed06f6599ac4acfe89c697f3c99b55dec476c475c237f6decf238376"},
 ]
 regex = [
     {file = "regex-2021.4.4-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:619d71c59a78b84d7f18891fe914446d07edd48dc8328c8e149cbe0929b4e000"},
