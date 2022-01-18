@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 def run(tg: Tdlib, stdscr: window) -> None:
 
+    print('1')
     # handle ctrl+c, to avoid interrupting tg when subprocess is called
     def interrupt_signal_handler(sig: int, frame: FrameType) -> None:
         # TODO: draw on status pane: to quite press <q>
@@ -30,6 +31,7 @@ def run(tg: Tdlib, stdscr: window) -> None:
     view = View(stdscr, chat_view, msg_view, status_view)
     controller = Controller(model, view, tg)
 
+    print('2')
     # hanlde resize of terminal correctly
     signal.signal(signal.SIGWINCH, controller.resize_handler)
 
@@ -40,6 +42,7 @@ def run(tg: Tdlib, stdscr: window) -> None:
     thread.daemon = True
     thread.start()
 
+    print('3')
     controller.draw()
 
 

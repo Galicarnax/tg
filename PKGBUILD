@@ -1,6 +1,6 @@
 pkgname=telegram-tg-galicarnax
-pkgver=0.17.0.r36.d763667
-pkgrel=1
+pkgver=0.17.0.r37.77dc9cd
+pkgrel=5
 pkgdesc="terminal telegram client that really works"
 arch=(any)
 url="https://github.com/paul-nameless/tg"
@@ -16,7 +16,7 @@ optdepends=(
 	'fzf: to create groups and secret chats, used for single and multiple user selection'
 )
 provides=("telegram-tg" "telegram-tg-git")
-conflicts=("telegram-tg")
+conflicts=("telegram-tg" "telegram-tg-git")
 source=()
 md5sums=('SKIP')
 
