@@ -32,11 +32,6 @@ MULTICHAR_KEYBINDINGS = (
 )
 
 
-def mylog(s):
-    fff = open('/home/max/fff' , 'a')
-    fff.write(s + '\n')
-    fff.close()
-
 class Win:
     """Proxy for win object to log error and continue working"""
 
@@ -603,7 +598,6 @@ class MsgView:
                 msg = self._format_msg(
                     msg_proxy, width_limit=self.w - label_len - 1
                 )
-                # mylog(msg)
                 elements = *label_elements, f" {msg}"
                 needed_lines = 0
                 for i, msg_line in enumerate(msg.split("\n")):

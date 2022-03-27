@@ -25,11 +25,12 @@ from tg.utils import (
 )
 from tg.views import View
 
-from subprocess import run as runproc, check_output as readproc
+from subprocess import Popen as runproc, check_output as readproc
 from threading import Timer
 from time import sleep
 
 log = logging.getLogger(__name__)
+
 
 # start scrolling to next page when number of the msgs left is less than value.
 # note, that setting high values could lead to situations when long msgs will
@@ -595,8 +596,9 @@ class Controller:
             self.download_current_file()
             # self.present_info("File should be downloaded first")
             self.tg.open_message_content(chat_id, msg.msg_id)
-            with suspend(self.view) as s:
-                s.open_file(path, cmd)
+            runproc(['xdg-open', path])
+            # with suspend(self.view) as s:
+            #     s.open_file(path, cmd)
             return
         chat_id = self.model.chats.id_by_index(self.model.current_chat)
         if not chat_id:
