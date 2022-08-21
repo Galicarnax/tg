@@ -32,6 +32,18 @@ MULTICHAR_KEYBINDINGS = (
 )
 
 
+def tr_title(t:str):
+    tr = None
+    try:
+        tr = config.TR
+    except:
+        return t
+    if t in tr:
+        return tr[t]
+    return t
+
+
+
 class Win:
     """Proxy for win object to log error and continue working"""
 
@@ -261,7 +273,7 @@ class ChatView:
 
         if status == 'online':
             title_color = green
-        elif status == 'group':
+        elif status == 'group' or status == 'channel':
             title_color = 38
         elif status == 'bot':
             title_color = 108
@@ -349,7 +361,7 @@ class ChatView:
 
             for attr, elem in zip(
                 self._chat_attributes(is_selected, title, status, 'muted' in flags, is_typing),
-                [cursor, f"{date} ", last_seen, title, unread_count],
+                [cursor, f"{date} ", last_seen, tr_title(title), unread_count],
             ):
                 if not elem:
                     continue

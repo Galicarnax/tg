@@ -4,6 +4,7 @@ __pycache__
 .env
 dist
 *.log*
+*.zst
 Makefile
 .idea/
 *monkeytype.sqlite3
