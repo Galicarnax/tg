@@ -1,11 +1,11 @@
 pkgname=telegram-tg-galicarnax
-pkgver=0.17.0.r40.ad421e0
+pkgver=0.17.0.r41.3d1b5af
 pkgrel=1
 pkgdesc="terminal telegram client that really works"
 arch=(any)
 url="https://github.com/paul-nameless/tg"
 license=('Unlicense')
-depends=('python-telegram=0.16.0' 'python3' 'python-setuptools')
+depends=('python-telegram=0.18.0' 'python3' 'python-setuptools')
 makedepends=('git' 'python-setuptools')
 optdepends=(
 	'libnotify: for notifications, you could also use other programs: see config'
