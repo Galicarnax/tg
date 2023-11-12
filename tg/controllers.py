@@ -451,7 +451,7 @@ class Controller:
             return self.present_error("Can't delete msg(s)")
         self.present_info("Message deleted")
 
-    @bind(msg_handler, ["S"])
+    @bind(msg_handler, ["S", "^T"])
     def choose_and_send_file(self) -> None:
         """Call file picker and send chosen file based on mimetype"""
         chat_id = self.model.chats.id_by_index(self.model.current_chat)

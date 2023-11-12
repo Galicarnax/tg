@@ -1,5 +1,5 @@
 pkgname=telegram-tg-galicarnax
-pkgver=0.17.0.r41.3d1b5af
+pkgver=0.17.0.r42.534feb0
 pkgrel=1
 pkgdesc="terminal telegram client that really works"
 arch=(any)
