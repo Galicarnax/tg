@@ -274,9 +274,9 @@ class ChatView:
         if status == 'online':
             title_color = green
         elif status == 'group' or status == 'channel':
-            title_color = 38
+            title_color = blue
         elif status == 'bot':
-            title_color = 108
+            title_color = cyan
 
         uc = get_color(yellow if not muted else 238, bgc)
         if not muted: # TODO and if read by other user

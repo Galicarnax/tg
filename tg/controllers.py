@@ -326,7 +326,7 @@ class Controller:
         if msg := self.view.status.get_input(prefix=f'rpl {ch__["title"]}: '):
             self.model.view_all_msgs()
             self.tg.reply_message(chat_id, reply_to_msg, msg)
-            self.present_info("Message reply sent")
+            self.present_info(f"Message reply sent (id: {reply_to_msg})")
             self.mark_as_read()
             self.become_offline()
         else:
