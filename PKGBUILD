@@ -5,8 +5,14 @@ pkgdesc="terminal telegram client that really works"
 arch=(any)
 url="https://github.com/paul-nameless/tg"
 license=('Unlicense')
-depends=('python-telegram=0.18.0' 'python3' 'python-setuptools')
-makedepends=('git' 'python-setuptools')
+depends=('python-telegram' 'python3')
+makedepends=(
+  'python-build'
+  'python-installer'
+  'python-poetry'
+  'python-setuptools'
+  'python-wheel'
+)
 optdepends=(
 	'libnotify: for notifications, you could also use other programs: see config'
 	'ffmpeg: to record voice msgs and upload videos correctly'
