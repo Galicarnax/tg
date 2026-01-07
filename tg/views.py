@@ -767,19 +767,23 @@ def get_last_msg(
     )
 
 
+
 def get_date(chat: Dict[str, Any]) -> str:
     last_msg = chat.get("last_message")
     if not last_msg:
         return "<No date>"
     dt = datetime.fromtimestamp(last_msg["date"])
-    date_fmt = "%b%y"
-    if datetime.today().date() == dt.date():
-        date_fmt = "%H:%M"
-    elif dt.date() == datetime.today().date() - timedelta(days=1):
-        return 'yestd'
-    elif datetime.today().year == dt.year:
-        date_fmt = "%d%b"
-    return dt.strftime(date_fmt)
+    today = datetime.today().date()
+    if dt.date() == today:
+        return dt.strftime("%H:%M")
+    elif dt.date() == today - timedelta(days=1):
+        return "yestd"
+    elif dt.date() >= today - timedelta(days=330):
+        return dt.strftime("%d%b")
+    elif dt.year == today.year:
+        return dt.strftime("%d%b")
+    else:
+        return dt.strftime("%b%y")
 
 
 def parse_content(msg: MsgProxy, users: UserModel) -> str:
