@@ -384,7 +384,8 @@ class Controller:
         if config.NOTIFY_TYPING:
             self.tg.send_chat_action(chat_id, ChatAction.chatActionTyping)
         ch__ = self.model.chats.chats[self.model.current_chat]
-        if msg := self.view.status.get_input(prefix=f'msg {ch__["title"]}: '):
+        # if msg := self.view.status.get_input(prefix=f'msg {ch__["title"]}: '):
+        if msg := self.view.status.get_input(prefix=f' '):
             self.model.send_message(text=msg)
             self.present_info("Message sent")
             self.mark_as_read()
